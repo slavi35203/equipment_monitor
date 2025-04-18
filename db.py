@@ -4,8 +4,18 @@ import sqlite3
 def get_connection():
     return sqlite3.connect("monitoringtool.db")
 
+def get_user_by_username(username):
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM Users WHERE username = ?", (username,))
+    user = cur.fetchone()
+    conn.close()
+    return user
+
 def execute_query(query, params = None):
     conn = get_connection()
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     if params:

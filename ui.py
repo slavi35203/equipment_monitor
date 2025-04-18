@@ -1,24 +1,60 @@
 import logic
+import os
+import time
+import getpass
+
+current_user = None
+
+def clear_screen():
+    os.system("cls" if os.name == "nt" else "clear")
+
+def login_screen():
+    global current_user
+    attempts = 0
+    while attempts < 3:
+        clear_screen()
+        print("===== LOGIN =====")
+        username = input("Username: ")
+        password = input("Password: ")
+        user = logic.authenticate_user(username, password)
+        if user:
+            current_user = user
+            print(f"\nWelcome, {user['name']}!")
+            time.sleep(1)
+            return True
+        else:
+            print("Invalid credentials, try again.")
+            attempts += 1
+            time.sleep(1)
+    print("Too many failed attempts. Exiting.")
+    exit(1)
 
 def display_menu():
-    print("\n==========================")
-    print("1. Login")
-    print("2. View all equipment")
-    print("3. View equipment by type")
-    print("4. Look up protocol")
-    print("5. Create new protocol")
-    print("6. Mark protocol as returned")
-    print("0. Exit")
-    return input("Enter your choice: ")
+    clear_screen()
+    # print(f"Logged in as: {current_user['name']} ({current_user['role']})\n")
+    if logic.is_admin(current_user):
+        print("1. View all equipment")
+        print("2. View equipment by type")
+        print("3. Lookup protocols")
+        print("4. Create new protocol")
+        print("5. Mark protocol as returned")
+        print("6. Manage users")
+        print("0. Logout")
+    else:
+        print("1. View my equipment")
+        print("2. View my protocols")
+        print("0. Logout")
+    return input("\nChoice: ")
 
 def view_all_equipment():
-    equpment = logic.get_all_equipment()
+    equipment = logic.get_all_equipment()
+    clear_screen()
     print("\n===== All Equipment ======")
     print(f"{'ID':<5} {'Brand':<15} {'Type':<20}")
     print("-" * 40)
-
-    for item in equpment:
-        print(f"{item[0]:<5} {item[1]:<15} {item[2]:<20}")
+    for e in equipment:
+        print(f"{e['id']:<5} {e['Brand']:<15} {e['type']:<20}")
+    input("\nPress Enter to continue...")
 
 def view_equipment_by_type():
     types = logic.get_equipment_types()
@@ -102,28 +138,141 @@ def mark_protocol_as_returned():
     else:
         print("Failed to update protocol. Please check the ID.")
 
+
+def view_all_users():
+    users = logic.get_all_users()
+    clear_screen()
+    print("\n===== All Users =====")
+    print(f"{'ID':<5} {'Name':<20} {'Username':<15} {'Role':<10} {'Active':<6}")
+    print("-"*60)
+    for u in users:
+        active = 'Yes' if u['isActive'] else 'No'
+        print(f"{u['id']:<5} {u['name']:<20} {u['username']:<15} {u['role']:<10} {active:<6}")
+    input("\nPress Enter to continue...")
+
+
+def add_new_user():
+    clear_screen()
+    print("\n===== Add New User =====")
+    name = input("Full Name: ")
+    username = input("Username: ")
+    password = input("Password: ")
+    role = input("Role (admin/employee): ").lower()
+    if role not in ['admin', 'employee']:
+        role = 'employee'
+    depts = logic.get_all_departments()
+    print("\nDepartments: ")
+    for d in depts:
+        print(f"{d['id']}: {d['name']}")
+    try:
+        dept_id = int(input("\nDepartment ID: "))
+        if logic.add_user(name, username, password, role, dept_id):
+            print("User added successfully!")
+        else:
+            print("Failed to add user (username may exist).")
+    except ValueError:
+        print("Invalid department ID.")
+    time.sleep(1)
+
+def edit_user():
+    clear_screen()
+    print("\n===== Edit User =====")
+    print()
+
+def deactivate_user():
+    clear_screen()
+    print("\n===== Deactivate User =====")
+    try:
+        user_id = int(input("User ID to deactivate: "))
+        if logic.deactivate_user(user_id):
+            print("User deactivated.")
+        else:
+            print("Failed to deactivate.")
+    except ValueError:
+        print("Invalid ID.")
+    time.sleep(1)
+
+def user_managment():
+    while True:
+        clear_screen()
+        print("\n===== User Management =====")
+        print("1. View all users")
+        print("2. Add new user")
+        print("3. Edit user")
+        print("4. Deactivate user")
+        print("0. Back")
+        choice = input("Choice: ")
+        if choice == '1': view_all_users()
+        elif choice == '2': add_new_user()
+        elif choice == '3': edit_user()
+        elif choice == '4': deactivate_user()
+        elif choice == '0': break
+        else: print("Invalid"); time.sleep(1)
+
+def view_my_equipment():
+    clear_screen()
+    print("\n===== My Assigned Equipment =====")
+    eqs = logic.get_user_equipment(current_user['id'])
+    if not eqs:
+        print("No equipment assigned.")
+    else:
+        print(f"{'ID':<5} {'Brand':<15} {'Type':<20} {'Date':<12}")
+        print("-"*60)
+        for e in eqs:
+            print(f"{e['id']:<5} {e['Brand']:<15} {e['type']:<20} {e['assignedDate']:<12}")
+    input("\nPress Enter to continue...")
+
+def view_my_protocols():
+    clear_screen()
+    print("\n===== My Protocols =====")
+    prots = logic.get_user_protocols(current_user['id'])
+    if not prots:
+        print("No protocols.")
+    else:
+        print(f"{'ID':<5} {'Type':<15} {'Date':<12} {'Returned':<8}")
+        print("-"*50)
+        for p in prots:
+            ret = 'Yes' if p['isReturned'] else 'No'
+            print(f"{p['id']:<5} {p['deviceType']:<15} {p['dateOfCreation']:<12} {ret:<8}")
+    input("\nPress Enter to continue...")
+
+
 def main_loop():
+    global current_user
+    if not login_screen():
+        return
+    print(f"Logged in as: {current_user['name']} ({current_user['role']})\n")
     while True:
         choice = display_menu()
+        if choice == "0":
+            print("Logging out...")
+            current_user = None
+            time.sleep(1)
+            return
 
-        if choice == '1':
-            print("Login functionality not implemented yet.")
-        elif choice == '2':
-            view_all_equipment()
-        elif choice == '3':
-            view_equipment_by_type()
-        elif choice == '4':
-            lookup_protocol()
-        elif choice == '5':
-            create_new_protocol()
-        elif choice == '6':
-            mark_protocol_as_returned()
-        elif choice == '0':
-            print("Exiting the application.")
-            break
+        if logic.is_admin(current_user):
+            if choice == "1":
+                view_all_equipment()
+            elif choice == "2":
+                view_equipment_by_type()
+            elif choice == "3":
+                lookup_protocol()
+            elif choice == "4":
+                create_new_protocol()
+            elif choice == "5":
+                mark_protocol_as_returned()
+            elif choice == "6":
+                user_managment()
+            else:
+                print("Invalid choice.")
         else:
-            print("Invalid choice. Please try again.")
-
+            if choice == "1":
+                view_my_equipment()
+            elif choice == "2":
+                view_my_protocols()
+            else:
+                print("Invalid choice.")
+        time.sleep(1)
 
 
 
