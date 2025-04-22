@@ -111,6 +111,11 @@ def add_user(name, username, password, role, department_id):
 def deactivate_user(user_id):
     return execute_update("UPDATE Users SET isActive = 0 WHERE id = ?", (user_id,)) > 0
 
+def delete_user(user_id):
+    return execute_query("DELETE FROM Users WHERE id = ?", (user_id,)) > 0
+
+def delete_protocol(protocol_id):
+    return execute_query("DELETE FROM Protocols WHERE id = ?", (protocol_id,)) > 0
 
 def get_user_equipment(user_id):
     query = """

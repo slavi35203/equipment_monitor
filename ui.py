@@ -3,6 +3,8 @@ import os
 import time
 import getpass
 
+from logic import delete_user
+
 current_user = None
 
 def clear_screen():
@@ -39,6 +41,7 @@ def display_menu():
         print("4. Create new protocol")
         print("5. Mark protocol as returned")
         print("6. Manage users")
+        print("7. Delete protocol")
         print("0. Logout")
     else:
         print("1. View my equipment")
@@ -192,7 +195,22 @@ def deactivate_user():
         print("Invalid ID.")
     time.sleep(1)
 
-def user_managment():
+def delete_protocol_ui():
+    clear_screen()
+    print("\n===== Delete Protocol =====")
+    try:
+        pid = int(input("Enter protocol ID to delete: "))
+        confirm = input("Are you sure? This action cannot be undone (y/n): ")
+        if confirm.lower() == 'y':
+            if logic.delete_protocol(pid):
+                print("Protocol deleted pernamently.")
+            else:
+                print("Failed to delete protocol.")
+    except ValueError:
+        print("Invalid ID.")
+    time.sleep(1)
+
+def user_management():
     while True:
         clear_screen()
         print("\n===== User Management =====")
@@ -200,12 +218,14 @@ def user_managment():
         print("2. Add new user")
         print("3. Edit user")
         print("4. Deactivate user")
+        print("5. Delete user")
         print("0. Back")
         choice = input("Choice: ")
         if choice == '1': view_all_users()
         elif choice == '2': add_new_user()
         elif choice == '3': edit_user()
         elif choice == '4': deactivate_user()
+        elif choice == '5': delete_user_ui()
         elif choice == '0': break
         else: print("Invalid"); time.sleep(1)
 
@@ -236,6 +256,24 @@ def view_my_protocols():
             print(f"{p['id']:<5} {p['deviceType']:<15} {p['dateOfCreation']:<12} {ret:<8}")
     input("\nPress Enter to continue...")
 
+def delete_user_ui():
+    clear_screen()
+    print("\n===== Delete User =====")
+    try:
+        uid = int(input("Enter user ID to delete:"))
+        confirm = input("Are you sure? This action cannot be undone (y/n): ")
+
+        if confirm.lower() == 'y':
+            if logic.delete_protocol(uid):
+                print("User deleted permanently.")
+            else:
+                print("Failed to delete user.")
+    except ValueError:
+        print("Invalid ID.")
+    time.sleep(1)
+
+
+
 
 def main_loop():
     global current_user
@@ -262,7 +300,9 @@ def main_loop():
             elif choice == "5":
                 mark_protocol_as_returned()
             elif choice == "6":
-                user_managment()
+                user_management()
+            elif choice == "7":
+                delete_protocol_ui()
             else:
                 print("Invalid choice.")
         else:
